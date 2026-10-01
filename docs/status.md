@@ -60,11 +60,11 @@ This is also where `longRunning?: boolean` was added to `PandaEntityClass` (`src
 
 **`panda:mongodb` — Phase 3's second deliverable, done.** `examples/adapters/real-mongodb-entity.ts`, importing the real `mongodb` npm driver (same corrected devDependency placement as `express` — workspace root, not kernel's own `package.json`). A structurally different shape than Express: a stateful resource other entities `uses` to get a live handle (`ctx.refs.mongo.getDb()`), not a host accepting contributions. Deliberately NOT marked `longRunning` — its `run()` genuinely completes ("connect, be ready"), sharpening what that flag actually means (completion point of the entity's own job, not whether a background resource stays open). Surfaced a real, `uses`-specific finding: the resolver orders *construction* via `uses`, not automatic `run()` sequencing — `demo-real-mongodb.ts` is the first demo that has to call `run()` on a dependency before its dependent, and `getDb()` throws clearly if that order is violated. Verified against a real, disposable Docker container (not any pre-existing one on this machine) with a real insert followed by a real query. **Phase 3 is now fully complete.** Full account in `DECISIONS.md`.
 
+**Phase 4 — real npm package resolution for `panda:module`'s `source` — done.** `src/npm-resolution.ts`: a package declares `"panda": { "manifest": "<path>" }` in its own `package.json` (a new convention, established here — reusing the same `"panda"` field found in `legacy/panda-scaffold`'s package.json during the original ecosystem archaeology). Real resolution via Node's own `require.resolve` is tried first; `registry.registerModuleSource()` is now an explicit test-double mechanism, falling through only when `source` isn't a real installed package. Verified against a real, new workspace member (`@panda/example-auth-module`) built purely to prove this — `examples/demo-npm-module-resolution.ts` is the exact same scenario as `demo-module.ts`, with zero calls to `registerModuleSource`, confirming inputs/encapsulation both still work correctly through the real resolution path. A distinct, deliberate error (not a silent fallback) when a package is real but its declared manifest file is missing, verified directly against a real installed package with no `panda.manifest.json`. Full account in `DECISIONS.md`.
+
 ## Designed, with a concrete worked example, but not implemented
 
-| Feature | What it's for | Where it's designed |
-|---|---|---|
-| Real npm package resolution for `panda:module`'s `source` | Actually resolving a published package by name/version, rather than the current in-memory `registerModuleSource()` stand-in | `SPEC.md` |
+Nothing currently in this category — the one remaining item (real npm resolution) is now implemented; see above.
 
 ## Identified as needed, not yet designed with a concrete example
 
