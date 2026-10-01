@@ -8,12 +8,13 @@ declare class PandaRegistry {
     private services;
     private linkHandlers;
     private valueResolvers;
-    /** Named manifests available to `panda:module`, keyed by whatever string
-     *  a manifest's `config.source` uses to refer to them. This is an
-     *  explicit STAND-IN for real npm package resolution — panda:module does
-     *  not actually read node_modules or fetch anything. Real package
-     *  resolution (treating `source` as an npm package name/version, per
-     *  SPEC.md) is still "designed, not implemented" — see docs/status.md. */
+    /** Named manifests available to `panda:module` as an explicit TEST-DOUBLE
+     *  mechanism — keyed by whatever string a manifest's `config.source`
+     *  uses, for sources that aren't (or aren't yet) real installed npm
+     *  packages. Real resolution (treating `source` as an npm package name,
+     *  reading its `package.json`'s `panda.manifest` field) is implemented
+     *  in npm-resolution.ts and tried first — see that file and
+     *  docs/modules.md. */
     private moduleSources;
     /** Tracks which service names are still holding their built-in default,
      *  so a real registration can override it exactly once without tripping
@@ -35,8 +36,11 @@ declare class PandaRegistry {
     /** Non-throwing lookup, used by validate() to report an unknown keyword
      *  as a diagnostic rather than throwing. */
     tryResolveLinkHandler(keyword: string): PandaLinkHandler | undefined;
-    /** See moduleSources' doc comment — this is a stand-in for real package
-     *  resolution, not the real thing. */
+    /** Explicit test-double mechanism for `panda:module` sources that
+     *  AREN'T (or aren't yet) real installed npm packages — e.g. demos,
+     *  tests, anything not yet published. Real resolution (Phase 4, see
+     *  npm-resolution.ts) is tried FIRST by `panda:module`'s configure();
+     *  this is only consulted as a fallback when that returns nothing. */
     registerModuleSource(name: string, manifest: PandaManifest): void;
     resolveModuleSource(name: string): PandaManifest;
     registerValueResolver(resolver: PandaValueResolver): void;
@@ -514,4 +518,52 @@ declare class ComputedValueResolver implements PandaValueResolver {
     resolve(value: unknown, ctx: PandaValueResolverContext): Promise<unknown>;
 }
 
-export { ComputedValueResolver, InputValueResolver, type JSONSchema, type PandaActionFn, PandaCliEntity, type PandaContext, PandaDevServerEntity, type PandaDiagnostic, type PandaEntityClass, type PandaEntityInstance, type PandaInputSchema, type PandaLinkHandler, type PandaLinkParams, type PandaLogger, PandaLoggerEntity, type PandaManifest, type PandaManifestEntity, type PandaRegisterOptions, PandaRegistry, type PandaServiceFactory, type PandaServices, type PandaStyler, type PandaTracer, type PandaValidationResult, type PandaValueResolver, type PandaValueResolverContext, type ResolveOptions, createCommandEntity, createModuleEntity, resolve, resolveConfigValues, validate };
+/**
+ * @panda/kernel — src/npm-resolution.ts
+ *
+ * Phase 4: real `panda:module` package resolution — replaces the
+ * previous registry.registerModuleSource()/resolveModuleSource()
+ * in-memory stand-in with actually reading an installed npm package's
+ * manifest off disk.
+ *
+ * Convention established here, since none existed before (see
+ * docs/modules.md's "What this does NOT do yet" section, now out of
+ * date): a package that wants to be consumable as a `panda:module`
+ * declares a `"panda"` field in its own `package.json`:
+ *
+ *   { "name": "@example/panda-auth", "panda": { "manifest": "panda.manifest.json" } }
+ *
+ * `manifest` is a path relative to the package root. This mirrors the
+ * marker already found in `legacy/panda-scaffold`'s own package.json
+ * during the original ecosystem archaeology (`"panda": { "module":
+ * "scaffold" }`) — reusing the same "panda" package.json field as a
+ * namespace for Panda-specific package metadata, rather than inventing
+ * an unrelated new convention.
+ */
+
+interface NpmModulePackageJson {
+    panda?: {
+        manifest?: string;
+    };
+}
+/**
+ * Resolves `source` as a real npm package name using Node's own module
+ * resolution, starting from `fromDir` (the consuming app's own
+ * directory — defaults to `process.cwd()`, matching the convention
+ * `@panda/paws` already established for resolving manifest/register
+ * file paths). Reads that package's `package.json`, finds its declared
+ * `panda.manifest` path (defaulting to `panda.manifest.json` at the
+ * package root if not declared), and parses that file as a
+ * `PandaManifest`.
+ *
+ * Returns `undefined` (not throws) if `source` doesn't resolve to an
+ * installed package at all — this lets `panda:module`'s configure()
+ * cleanly fall through to the pre-registered in-memory stand-in
+ * (registry.resolveModuleSource) for cases that aren't real installed
+ * packages (tests, demos, anything not yet published), rather than
+ * forcing every caller to catch an exception for what's often a
+ * perfectly normal, deliberate case.
+ */
+declare function resolveNpmModuleSource(source: string, fromDir?: string): PandaManifest | undefined;
+
+export { ComputedValueResolver, InputValueResolver, type JSONSchema, type NpmModulePackageJson, type PandaActionFn, PandaCliEntity, type PandaContext, PandaDevServerEntity, type PandaDiagnostic, type PandaEntityClass, type PandaEntityInstance, type PandaInputSchema, type PandaLinkHandler, type PandaLinkParams, type PandaLogger, PandaLoggerEntity, type PandaManifest, type PandaManifestEntity, type PandaRegisterOptions, PandaRegistry, type PandaServiceFactory, type PandaServices, type PandaStyler, type PandaTracer, type PandaValidationResult, type PandaValueResolver, type PandaValueResolverContext, type ResolveOptions, createCommandEntity, createModuleEntity, resolve, resolveConfigValues, resolveNpmModuleSource, validate };

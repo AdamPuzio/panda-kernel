@@ -6892,6 +6892,7 @@ __export(index_exports, {
   createModuleEntity: () => createModuleEntity,
   resolve: () => resolve,
   resolveConfigValues: () => resolveConfigValues,
+  resolveNpmModuleSource: () => resolveNpmModuleSource,
   validate: () => validate
 });
 module.exports = __toCommonJS(index_exports);
@@ -7017,12 +7018,13 @@ var PandaRegistry = class {
   services = /* @__PURE__ */ new Map();
   linkHandlers = /* @__PURE__ */ new Map();
   valueResolvers = /* @__PURE__ */ new Map();
-  /** Named manifests available to `panda:module`, keyed by whatever string
-   *  a manifest's `config.source` uses to refer to them. This is an
-   *  explicit STAND-IN for real npm package resolution — panda:module does
-   *  not actually read node_modules or fetch anything. Real package
-   *  resolution (treating `source` as an npm package name/version, per
-   *  SPEC.md) is still "designed, not implemented" — see docs/status.md. */
+  /** Named manifests available to `panda:module` as an explicit TEST-DOUBLE
+   *  mechanism — keyed by whatever string a manifest's `config.source`
+   *  uses, for sources that aren't (or aren't yet) real installed npm
+   *  packages. Real resolution (treating `source` as an npm package name,
+   *  reading its `package.json`'s `panda.manifest` field) is implemented
+   *  in npm-resolution.ts and tried first — see that file and
+   *  docs/modules.md. */
   moduleSources = /* @__PURE__ */ new Map();
   /** Tracks which service names are still holding their built-in default,
    *  so a real registration can override it exactly once without tripping
@@ -7092,8 +7094,11 @@ var PandaRegistry = class {
   tryResolveLinkHandler(keyword) {
     return this.linkHandlers.get(keyword);
   }
-  /** See moduleSources' doc comment — this is a stand-in for real package
-   *  resolution, not the real thing. */
+  /** Explicit test-double mechanism for `panda:module` sources that
+   *  AREN'T (or aren't yet) real installed npm packages — e.g. demos,
+   *  tests, anything not yet published. Real resolution (Phase 4, see
+   *  npm-resolution.ts) is tried FIRST by `panda:module`'s configure();
+   *  this is only consulted as a fallback when that returns nothing. */
   registerModuleSource(name, manifest) {
     if (this.moduleSources.has(name)) {
       throw new Error(`Module source "${name}" is already registered`);
@@ -7392,6 +7397,32 @@ var PandaCliEntity = class {
   }
 };
 
+// src/npm-resolution.ts
+var import_node_fs = require("fs");
+var import_node_module = require("module");
+var import_node_path = require("path");
+function resolveNpmModuleSource(source, fromDir = process.cwd()) {
+  const require2 = (0, import_node_module.createRequire)((0, import_node_path.join)(fromDir, "noop.js"));
+  let packageJsonPath;
+  try {
+    packageJsonPath = require2.resolve(`${source}/package.json`);
+  } catch {
+    return void 0;
+  }
+  const packageJson = JSON.parse((0, import_node_fs.readFileSync)(packageJsonPath, "utf-8"));
+  const manifestRelativePath = packageJson.panda?.manifest ?? "panda.manifest.json";
+  const manifestPath = (0, import_node_path.join)((0, import_node_path.dirname)(packageJsonPath), manifestRelativePath);
+  let manifestContents;
+  try {
+    manifestContents = (0, import_node_fs.readFileSync)(manifestPath, "utf-8");
+  } catch {
+    throw new Error(
+      `"${source}" was resolved as a real npm package, but its manifest ("${manifestRelativePath}", per its package.json "panda.manifest" field or the default) doesn't exist at ${manifestPath}`
+    );
+  }
+  return JSON.parse(manifestContents);
+}
+
 // src/entities/module.ts
 function createModuleEntity(registry) {
   return class PandaModuleEntity {
@@ -7415,7 +7446,7 @@ function createModuleEntity(registry) {
      *  anyone's run() is ever called. */
     async configure(_ctx) {
       const { source, inputs: suppliedInputs } = this.config;
-      const nestedManifest = registry.resolveModuleSource(source);
+      const nestedManifest = resolveNpmModuleSource(source) ?? registry.resolveModuleSource(source);
       const resolvedInputs = this.resolveInputs(source, nestedManifest.inputs, suppliedInputs);
       const materializedEntities = {};
       for (const [key, entry] of Object.entries(nestedManifest.entities)) {
@@ -7517,5 +7548,6 @@ var PandaDevServerEntity = class {
   createModuleEntity,
   resolve,
   resolveConfigValues,
+  resolveNpmModuleSource,
   validate
 });
