@@ -5,12 +5,15 @@
  * entity inside a bigger one — see examples/at-scale/panda-auth.manifest
  * .json / consumer.manifest.json and module-nesting-at-depth.md for the
  * design. This proves it for real: recursive resolve(), a manifest's own
- * `exports` map, one-hop dotted references (entity-ref.ts), and now
- * `inputs`/parameterization via the `$input` value resolver.
+ * `exports` map, one-hop dotted references (entity-ref.ts),
+ * `inputs`/parameterization via the `$input` value resolver, and now
+ * (Phase 4) real npm package resolution (`npm-resolution.ts`) — `source`
+ * resolves against an actual installed package's `package.json` first,
+ * falling back to `registry.registerModuleSource()` (now an explicit
+ * test-double mechanism, not the only path) when `source` isn't a real
+ * installed package.
  *
- * NOT implemented here: real npm package resolution (`source` is resolved
- * against registry.registerModuleSource(), an explicit stand-in — see
- * registry.ts). `$computed` is implemented (see value-resolvers.ts,
+ * `$computed` is implemented (see value-resolvers.ts,
  * ComputedValueResolver) but not exercised by anything in THIS file — its
  * resolution timing is lazy/caller-driven (a dependent entity resolves it
  * inside its own run(), once its dependency has actually run), unlike
@@ -22,6 +25,7 @@ import type { JSONSchema, PandaContext, PandaEntityInstance, PandaManifestEntity
 import type { PandaRegistry } from '../registry'
 import { resolve } from '../resolver'
 import { resolveConfigValues } from '../value-resolvers'
+import { resolveNpmModuleSource } from '../npm-resolution'
 
 export interface ModuleConfig {
   source: string
@@ -54,7 +58,14 @@ export function createModuleEntity(registry: PandaRegistry) {
      *  anyone's run() is ever called. */
     async configure(_ctx: PandaContext): Promise<void> {
       const { source, inputs: suppliedInputs } = this.config as unknown as ModuleConfig
-      const nestedManifest = registry.resolveModuleSource(source)
+      // Real npm resolution (Phase 4) first — see npm-resolution.ts for
+      // the "panda.manifest" package.json convention this relies on.
+      // Falls through to the pre-registered in-memory stand-in
+      // (registry.registerModuleSource) if `source` doesn't resolve to a
+      // real installed package — this is now an explicit test-double
+      // mechanism for cases that aren't (or aren't yet) real published
+      // packages, not the only path, per DECISIONS.md.
+      const nestedManifest = resolveNpmModuleSource(source) ?? registry.resolveModuleSource(source)
 
       const resolvedInputs = this.resolveInputs(source, nestedManifest.inputs, suppliedInputs)
 

@@ -37,12 +37,13 @@ export class PandaRegistry {
   private services = new Map<string, PandaServiceFactory>()
   private linkHandlers = new Map<string, PandaLinkHandler>()
   private valueResolvers = new Map<string, PandaValueResolver>()
-  /** Named manifests available to `panda:module`, keyed by whatever string
-   *  a manifest's `config.source` uses to refer to them. This is an
-   *  explicit STAND-IN for real npm package resolution — panda:module does
-   *  not actually read node_modules or fetch anything. Real package
-   *  resolution (treating `source` as an npm package name/version, per
-   *  SPEC.md) is still "designed, not implemented" — see docs/status.md. */
+  /** Named manifests available to `panda:module` as an explicit TEST-DOUBLE
+   *  mechanism — keyed by whatever string a manifest's `config.source`
+   *  uses, for sources that aren't (or aren't yet) real installed npm
+   *  packages. Real resolution (treating `source` as an npm package name,
+   *  reading its `package.json`'s `panda.manifest` field) is implemented
+   *  in npm-resolution.ts and tried first — see that file and
+   *  docs/modules.md. */
   private moduleSources = new Map<string, PandaManifest>()
   /** Tracks which service names are still holding their built-in default,
    *  so a real registration can override it exactly once without tripping
@@ -137,8 +138,11 @@ export class PandaRegistry {
     return this.linkHandlers.get(keyword)
   }
 
-  /** See moduleSources' doc comment — this is a stand-in for real package
-   *  resolution, not the real thing. */
+  /** Explicit test-double mechanism for `panda:module` sources that
+   *  AREN'T (or aren't yet) real installed npm packages — e.g. demos,
+   *  tests, anything not yet published. Real resolution (Phase 4, see
+   *  npm-resolution.ts) is tried FIRST by `panda:module`'s configure();
+   *  this is only consulted as a fallback when that returns nothing. */
   registerModuleSource(name: string, manifest: PandaManifest): void {
     if (this.moduleSources.has(name)) {
       throw new Error(`Module source "${name}" is already registered`)
