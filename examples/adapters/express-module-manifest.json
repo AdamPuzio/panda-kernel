@@ -1,0 +1,15 @@
+{
+  "panda": "1",
+  "entities": {
+    "healthRoute": {
+      "type": "panda:express-route",
+      "config": { "method": "get", "path": "/health", "action": "restApiStarter:healthAction" },
+      "contributesTo": "app"
+    },
+    "app": {
+      "type": "panda:express",
+      "config": { "port": 4128 }
+    }
+  },
+  "exports": { "app": "app" }
+}
