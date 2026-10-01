@@ -1,0 +1,23 @@
+{
+  "panda": "1",
+  "inputs": {
+    "greeting": { "type": "string", "default": "Welcome" }
+  },
+  "entities": {
+    "loginCommand": {
+      "type": "panda:command",
+      "config": {
+        "command": "login",
+        "description": { "$input": "greeting" },
+        "action": "auth:loginAction"
+      }
+    },
+    "internalDebugCommand": {
+      "type": "panda:command",
+      "config": { "command": "auth:debug", "action": "auth:debugAction" }
+    }
+  },
+  "exports": {
+    "login": "loginCommand"
+  }
+}

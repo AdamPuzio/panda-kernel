@@ -1,0 +1,17 @@
+{
+  "panda": "1",
+  "entities": {
+    "auth": {
+      "type": "panda:module",
+      "config": {
+        "source": "@yourorg/panda-auth",
+        "inputs": { "tokenSecret": "${env.TOKEN_SECRET}" }
+      }
+    },
+    "cli": {
+      "type": "panda:cli",
+      "uses": ["auth"],
+      "config": { "name": "myapp" }
+    }
+  }
+}

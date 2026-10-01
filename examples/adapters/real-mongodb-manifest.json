@@ -1,0 +1,14 @@
+{
+  "panda": "1",
+  "entities": {
+    "mongo": {
+      "type": "panda:mongodb",
+      "config": { "url": "mongodb://localhost:27418", "database": "panda_demo" }
+    },
+    "seedAndQuery": {
+      "type": "panda:command",
+      "config": { "command": "seed-and-query", "action": "demo:seedAndQuery" },
+      "uses": ["mongo"]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "panda": "1",
+  "entities": {
+    "logger": {
+      "type": "panda:logger",
+      "config": { "level": "info" }
+    },
+    "deploy": {
+      "type": "panda:command",
+      "uses": ["logger"],
+      "config": {
+        "command": "deploy",
+        "description": "Deploy the app",
+        "action": "myapp:deployAction"
+      }
+    }
+  }
+}

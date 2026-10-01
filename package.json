@@ -1,0 +1,40 @@
+{
+  "name": "@panda/kernel",
+  "version": "0.1.0",
+  "description": "Panda's entity contract, registry, and manifest resolver — the binder that assembles @panda/* entities into a running app from JSON",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "keywords": [
+    "panda",
+    "kernel",
+    "manifest",
+    "registry",
+    "composable",
+    "json"
+  ],
+  "scripts": {
+    "dev": "npm run build -- --watch src",
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "build:cjs": "tsup src/index.ts --format cjs --dts",
+    "build:esm": "tsup src/index.ts --format esm --dts",
+    "lint": "eslint src",
+    "lint:fix": "eslint --fix src",
+    "test": "vitest run",
+    "test:watch": "vitest --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.8",
+    "ajv": "^8.16.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

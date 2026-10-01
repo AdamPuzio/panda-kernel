@@ -1,0 +1,15 @@
+{
+  "panda": "1",
+  "entities": {
+    "devServer": {
+      "type": "panda:dev-server",
+      "config": { "portRange": [3000, 4000] }
+    },
+    "openBrowser": {
+      "type": "panda:open-browser",
+      "config": {
+        "port": { "$computed": { "from": "devServer", "output": "port" } }
+      }
+    }
+  }
+}

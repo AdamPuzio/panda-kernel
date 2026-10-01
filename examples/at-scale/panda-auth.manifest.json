@@ -1,0 +1,26 @@
+{
+  "panda": "1",
+  "inputs": {
+    "tokenSecret": { "type": "string", "required": true },
+    "tokenTtl": { "type": "string", "default": "1h" }
+  },
+  "entities": {
+    "logger": { "type": "panda:logger", "config": { "level": "info" } },
+    "tokenTask": {
+      "type": "panda:task",
+      "config": { "secret": "${inputs.tokenSecret}", "ttl": "${inputs.tokenTtl}" }
+    },
+    "loginCommand": {
+      "type": "panda:command",
+      "uses": ["tokenTask", "logger"],
+      "config": { "command": "login", "action": "auth:loginAction" }
+    },
+    "internalDebugCommand": {
+      "type": "panda:command",
+      "config": { "command": "auth:debug", "action": "auth:debugAction" }
+    }
+  },
+  "exports": {
+    "login": "loginCommand"
+  }
+}

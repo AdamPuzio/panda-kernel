@@ -1,0 +1,53 @@
+{
+  "panda": "1",
+  "entities": {
+    "logger": {
+      "type": "panda:logger",
+      "config": { "level": "info", "format": "cli" }
+    },
+    "style": {
+      "type": "panda:colors",
+      "config": { "theme": { "success": ["green", "bold"], "error": ["red", "bold"] } }
+    },
+    "buildTask": {
+      "type": "panda:task",
+      "uses": ["logger"],
+      "config": {
+        "steps": [
+          { "type": "npm:install" },
+          { "type": "command", "run": "tsc --build" }
+        ]
+      }
+    },
+    "deployTask": {
+      "type": "panda:task",
+      "uses": ["logger", "style"],
+      "config": {
+        "steps": [
+          { "type": "file:copy", "source": "dist", "target": "deploy/dist" },
+          { "type": "command", "run": "rsync -av deploy/ remote:/app" }
+        ]
+      }
+    },
+    "build": {
+      "type": "panda:command",
+      "uses": ["buildTask", "logger"],
+      "config": { "command": "build", "action": "myapp:runTask", "task": "buildTask" }
+    },
+    "deploy": {
+      "type": "panda:command",
+      "uses": ["deployTask", "logger", "style"],
+      "config": {
+        "command": "deploy",
+        "options": [{ "name": "env", "type": "string", "default": "staging" }],
+        "action": "myapp:runTask",
+        "task": "deployTask"
+      }
+    },
+    "cli": {
+      "type": "panda:cli",
+      "uses": ["build", "deploy"],
+      "config": { "name": "myapp", "version": "1.0.0" }
+    }
+  }
+}

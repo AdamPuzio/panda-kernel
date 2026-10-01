@@ -1,0 +1,22 @@
+{
+  "panda": "1",
+  "entities": {
+    "logger": {
+      "type": "panda:logger",
+      "config": { "level": "info" }
+    },
+    "deploy": {
+      "type": "panda:command",
+      "uses": ["logger", "doesNotExist"],
+      "config": {
+        "command": "deploy",
+        "description": 12345,
+        "action": "myapp:actionThatWasNeverRegistered"
+      }
+    },
+    "broken": {
+      "type": "panda:this-type-does-not-exist",
+      "config": {}
+    }
+  }
+}

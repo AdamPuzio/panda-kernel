@@ -1,0 +1,19 @@
+{
+  "panda": "1",
+  "entities": {
+    "requestLogger": {
+      "type": "panda:express-middleware",
+      "config": { "action": "demo:logRequest" },
+      "contributesTo": "app"
+    },
+    "healthRoute": {
+      "type": "panda:express-route",
+      "config": { "method": "get", "path": "/health", "action": "demo:healthAction" },
+      "contributesTo": "app"
+    },
+    "app": {
+      "type": "panda:express",
+      "config": { "port": 4127 }
+    }
+  }
+}

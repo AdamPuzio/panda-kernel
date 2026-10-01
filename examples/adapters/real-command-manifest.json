@@ -1,0 +1,18 @@
+{
+  "panda": "1",
+  "entities": {
+    "greet": {
+      "type": "panda:command",
+      "config": {
+        "name": "greet",
+        "command": "greet",
+        "description": "Greet someone by name",
+        "options": [
+          { "name": "name", "alias": "n", "type": "String", "description": "Who to greet" }
+        ],
+        "action": "myapp:greetAction",
+        "argv": ["--name", "World"]
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "panda": "1",
+  "entities": {
+    "build": {
+      "type": "panda:command",
+      "config": { "command": "build", "action": "myapp:buildAction" }
+    },
+    "deploy": {
+      "type": "panda:command",
+      "config": { "command": "deploy", "action": "myapp:deployAction" }
+    },
+    "statusPlugin": {
+      "type": "panda:command",
+      "contributesTo": "cli",
+      "config": { "command": "status", "action": "statusPlugin:statusAction" }
+    },
+    "cli": {
+      "type": "panda:cli",
+      "uses": ["build", "deploy"],
+      "config": { "name": "myapp" }
+    }
+  }
+}
